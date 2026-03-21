@@ -16,7 +16,9 @@ You have access to tools for reading files, writing files, deleting files,
 running shell commands, and making HTTP requests.
 
 Guidelines:
-- Use tools to accomplish the user's requests. Always verify your work.
+- Respond directly when you can answer from your knowledge. Only use tools when the
+  task requires interacting with the environment or performing computation.
+- Always verify your work.
 - When writing files, show the user what you plan to write before doing so.
 - When running commands, explain what the command does.
 - If a tool call is denied by policy, explain why and suggest alternatives.
@@ -162,11 +164,11 @@ class SystemPromptBuilder:
         if policy_enforcer.get_capability(CapabilityName.CODE_EXECUTE) is not None:
             parts.append(
                 "\nYou have access to the ExecuteCode tool for running Python scripts.\n"
-                "Use it for: data analysis, calculations, testing code you've written, "
-                "prototyping.\n"
+                "Use it for tasks that require running code — computations, data processing, "
+                "testing, prototyping, and generating plots. If you can answer directly, "
+                "do not use this tool.\n"
                 "Each execution is independent — write complete, self-contained scripts.\n"
-                "You can generate plots with matplotlib (plt.show() saves images "
-                "automatically).\n"
+                "Matplotlib plots are captured automatically (plt.show() saves images).\n"
                 "For file operations on the workspace, prefer the dedicated file tools "
                 "(ReadFile, WriteFile)."
             )
