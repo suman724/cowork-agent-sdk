@@ -115,6 +115,26 @@ class ReactLoop:
                     )
                     continue  # Re-enter loop so LLM creates a plan
 
+                # Plan continuation: if a plan exists with incomplete steps,
+                # this is a step boundary — not task completion. Continue
+                # to the next step without triggering verification.
+                if has_plan:
+                    plan = self._h.working_memory.plan  # type: ignore[union-attr]
+                    incomplete = any(s.status in ("pending", "in_progress") for s in plan.steps)
+                    if incomplete:
+                        logger.info(
+                            "plan_step_boundary",
+                            task_id=task_id,
+                            step=step,
+                            pending_steps=sum(
+                                1 for s in plan.steps if s.status in ("pending", "in_progress")
+                            ),
+                        )
+                        self._h.thread.add_system_injection(
+                            "The plan has incomplete steps. Continue with the next step."
+                        )
+                        continue  # Re-enter loop — don't treat as completion
+
                 # Verification phase: inject verification prompt on first completion
                 if self._verification and self._verification.enabled and not verification_injected:
                     verification_injected = True
