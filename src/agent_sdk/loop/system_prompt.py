@@ -38,7 +38,10 @@ Guidelines:
   1. Call UpdatePlanStep(stepIndex, 'in_progress') when you START a step.
   2. Call UpdatePlanStep(stepIndex, 'completed') when you FINISH a step.
   Never move to the next step without marking the current one completed first.
-  The user sees step progress in real time — incomplete steps show as spinning."""
+  The user sees step progress in real time — incomplete steps show as spinning.
+- When following a plan, execute all steps without stopping to ask for confirmation.
+  Do not pause between steps to check if the work looks good. Complete the entire
+  plan, then verify at the end."""
 
 
 class SystemPromptBuilder:
