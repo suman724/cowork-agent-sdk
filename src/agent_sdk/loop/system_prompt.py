@@ -177,6 +177,17 @@ class SystemPromptBuilder:
                 "(ReadFile, WriteFile)."
             )
 
+        if policy_enforcer.get_capability("Browser.Navigate") is not None:
+            parts.append(
+                "\nYou have browser tools available for web tasks.\n"
+                "Use BrowserNavigate to visit URLs, then interact with page elements "
+                "by their index numbers (shown in page state as [1], [2], etc.).\n"
+                "After every action that modifies the page, re-read the page state — "
+                "element indices may change after navigation or DOM updates.\n"
+                "Never reuse stale indices from a previous page state.\n"
+                "For local file work, use the file and shell tools instead."
+            )
+
         return "\n".join(parts)
 
     @staticmethod
