@@ -38,7 +38,11 @@ Guidelines:
   1. Call UpdatePlanStep(stepIndex, 'in_progress') when you START a step.
   2. Call UpdatePlanStep(stepIndex, 'completed') when you FINISH a step.
   Never move to the next step without marking the current one completed first.
-  The user sees step progress in real time — incomplete steps show as spinning."""
+  The user sees step progress in real time — incomplete steps show as spinning.
+- For complex plan steps, you may delegate to a sub-agent using SpawnAgent
+  with the planStepIndex parameter. The sub-agent will receive the plan context
+  and the step will be automatically updated on completion. Use sub-agents for
+  steps that are self-contained and don't depend on your current conversation state."""
 
 
 class SystemPromptBuilder:
