@@ -2,7 +2,11 @@
 
 from __future__ import annotations
 
-from agent_sdk.policy.command_matcher import check_command, extract_base_command
+from agent_sdk.policy.command_matcher import (
+    check_command,
+    extract_base_command,
+    matches_command_pattern,
+)
 
 
 class TestExtractBaseCommand:
@@ -66,3 +70,76 @@ class TestCheckCommand:
         """Empty allowlist [] is falsy, so treated as 'no restriction'."""
         allowed, _ = check_command("git status", [], None)
         assert allowed
+
+    # --- Pattern-based matching (A8) ---
+
+    def test_blocked_pattern_git_force_push(self) -> None:
+        allowed, reason = check_command(
+            "git push --force origin main",
+            ["git *"],
+            ["git push --force *"],
+        )
+        assert not allowed
+        assert "blocked by pattern" in reason
+
+    def test_allowed_pattern_git_wildcard(self) -> None:
+        allowed, _ = check_command("git status", ["git *"], None)
+        assert allowed
+
+    def test_allowed_pattern_subcommand(self) -> None:
+        allowed, _ = check_command("git push origin main", ["git push *"], None)
+        assert allowed
+
+    def test_not_allowed_pattern_mismatch(self) -> None:
+        allowed, _ = check_command("npm install", ["git *"], None)
+        assert not allowed
+
+    def test_base_only_backward_compat_with_patterns(self) -> None:
+        """Simple base-only entries still work alongside patterns."""
+        allowed, _ = check_command("npm install express", ["git *", "npm"], None)
+        assert allowed
+
+    def test_blocked_pattern_rm_rf_root(self) -> None:
+        allowed, reason = check_command("rm -rf /", None, ["rm -rf /"])
+        assert not allowed
+        assert "blocked by pattern" in reason
+
+    def test_allowed_rm_specific_file_not_blocked(self) -> None:
+        """rm of a specific file should not be blocked by 'rm -rf /' pattern."""
+        allowed, _ = check_command("rm temp.txt", None, ["rm -rf /", "rm -rf ~"])
+        assert allowed
+
+
+class TestMatchesCommandPattern:
+    def test_exact_subcommand(self) -> None:
+        assert matches_command_pattern("git push", "git push")
+
+    def test_wildcard_matches_remaining(self) -> None:
+        assert matches_command_pattern("git push origin main", "git push *")
+
+    def test_wildcard_matches_zero_remaining(self) -> None:
+        assert matches_command_pattern("git push", "git push *")
+
+    def test_no_match_different_base(self) -> None:
+        assert not matches_command_pattern("npm install", "git *")
+
+    def test_no_match_different_subcommand(self) -> None:
+        assert not matches_command_pattern("git status", "git push")
+
+    def test_base_only_matches(self) -> None:
+        assert matches_command_pattern("git status", "git")
+
+    def test_flags_match(self) -> None:
+        assert matches_command_pattern("git push --force origin", "git push --force *")
+
+    def test_flags_no_match(self) -> None:
+        assert not matches_command_pattern("git push origin", "git push --force *")
+
+    def test_path_prefix_stripped(self) -> None:
+        assert matches_command_pattern("/usr/bin/git push", "git push")
+
+    def test_empty_command(self) -> None:
+        assert not matches_command_pattern("", "git")
+
+    def test_empty_pattern(self) -> None:
+        assert not matches_command_pattern("git status", "")

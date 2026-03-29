@@ -11,7 +11,7 @@ class PlanStep:
     """A single step in an agent plan."""
 
     description: str
-    status: Literal["pending", "in_progress", "completed", "skipped"] = "pending"
+    status: Literal["pending", "in_progress", "completed", "skipped", "failed"] = "pending"
 
 
 @dataclass
@@ -27,7 +27,8 @@ class Plan:
             return ""
         lines = [f"## Current Plan\nGoal: {self.goal}"]
         for i, step in enumerate(self.steps, 1):
-            lines.append(f"{i}. [{step.status}] {step.description}")
+            badge = "FAILED" if step.status == "failed" else step.status
+            lines.append(f"{i}. [{badge}] {step.description}")
         in_progress = [(i, s) for i, s in enumerate(self.steps) if s.status == "in_progress"]
         has_pending = any(s.status == "pending" for s in self.steps)
         if in_progress:
