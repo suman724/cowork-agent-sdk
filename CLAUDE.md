@@ -29,6 +29,7 @@ agent_sdk/
 - **LoopContext Protocol** (`loop/context.py`) — The central interface that any loop strategy needs from its runtime. Defines methods for LLM calls, tool execution, memory access, event emission. Implemented by `LoopRuntime` in `cowork-agent-runtime`.
 - **LoopStrategy Protocol** (`loop/strategy.py`) — Single method `async def run(task_id) -> LoopResult`. Strategies compose LoopContext primitives.
 - **ReactLoop** (`loop/react_loop.py`) — Default ReAct loop strategy. Depends on `LoopContext`, not concrete `LoopRuntime`.
+- **Browser guidance** (`loop/system_prompt.py`) — When `Browser.Navigate` capability is granted, adds LLM instructions for browser tool usage: use element indices, re-extract page state after DOM changes, never reuse stale indices.
 
 ## Dependency Rules
 
