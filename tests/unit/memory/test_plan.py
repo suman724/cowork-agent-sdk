@@ -5,6 +5,16 @@ from __future__ import annotations
 from agent_sdk.memory.plan import Plan, PlanStep
 
 
+class TestPlanStep:
+    def test_failed_status_valid(self) -> None:
+        step = PlanStep(description="Deploy", status="failed")
+        assert step.status == "failed"
+
+    def test_default_status_pending(self) -> None:
+        step = PlanStep(description="Something")
+        assert step.status == "pending"
+
+
 class TestPlanRender:
     def test_render_empty_goal(self) -> None:
         plan = Plan(goal="")
@@ -31,6 +41,32 @@ class TestPlanRender:
         rendered = plan.render()
         assert "Goal: Simple goal" in rendered
 
+    def test_render_failed_step(self) -> None:
+        plan = Plan(
+            goal="Deploy service",
+            steps=[
+                PlanStep(description="Build image", status="completed"),
+                PlanStep(description="Push to registry", status="failed"),
+                PlanStep(description="Update k8s", status="pending"),
+            ],
+        )
+        rendered = plan.render()
+        assert "1. [completed] Build image" in rendered
+        assert "2. [FAILED] Push to registry" in rendered
+        assert "3. [pending] Update k8s" in rendered
+
+    def test_render_failed_step_not_in_progress_guidance(self) -> None:
+        """Failed steps should not trigger the in_progress reminder."""
+        plan = Plan(
+            goal="Test",
+            steps=[
+                PlanStep(description="Step 1", status="completed"),
+                PlanStep(description="Step 2", status="failed"),
+            ],
+        )
+        rendered = plan.render()
+        assert "still marked in_progress" not in rendered
+
 
 class TestPlanCheckpoint:
     def test_round_trip(self) -> None:
@@ -49,6 +85,19 @@ class TestPlanCheckpoint:
         assert restored.steps[0].description == "Step 1"
         assert restored.steps[0].status == "completed"
         assert restored.steps[1].status == "pending"
+
+    def test_round_trip_with_failed(self) -> None:
+        plan = Plan(
+            goal="Deploy",
+            steps=[
+                PlanStep(description="Build", status="completed"),
+                PlanStep(description="Push", status="failed"),
+            ],
+        )
+        data = plan.to_checkpoint()
+        restored = Plan.from_checkpoint(data)
+
+        assert restored.steps[1].status == "failed"
 
     def test_empty_checkpoint(self) -> None:
         restored = Plan.from_checkpoint({})
